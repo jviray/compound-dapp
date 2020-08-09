@@ -6,9 +6,6 @@ class App extends Component {
   state = {
     accountAddr: '',
   };
-  // console.log(web3.version);
-
-  // web3.eth.getAccounts().then(console.log());
 
   async componentDidMount() {
     const accounts = await web3.eth.getAccounts();
