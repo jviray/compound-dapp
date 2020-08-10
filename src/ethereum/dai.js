@@ -1,5 +1,6 @@
 import web3 from './web3';
 
+// Dai address on Kovan
 const address = '0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa';
 
 const abi = [

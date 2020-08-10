@@ -1,9 +1,12 @@
 const assert = require('assert');
 const ganache = require('ganache-cli');
 const Web3 = require('web3');
+
 const DAI_ABI = require('./daiAbi');
 const CDAI_ABI = require('./cDaiAbi');
-const { interface, bytecode } = require('../ethereum/compile');
+
+const compiledDapp = require('../ethereum/build/Dapp.json');
+const compiledSupply = require('../ethereum/build/Supply.json');
 
 const KOVAN_NODE_URL =
   'https://kovan.infura.io/v3/213d3dde92d54590aedc49f08282827e';
@@ -15,7 +18,7 @@ const TESTING_MNEMONIC =
   'clutch captain shoe salt awake harvest setup primary inmate ugly among become';
 
 // Either use Ethplorer/Etherscan to randomly select a large holder of Dai on the network
-// so we can send out transactions during testing without the private key
+// so we can send out transactions during testing without the private key,
 
 // Or you can also use your own test account if it has Dai
 const UNLOCKED_ADDRESS = '0xF4Cd1Fc53c6146B81b4b50b3C92342E974b739eA';
@@ -36,10 +39,15 @@ const web3 = new Web3(
 );
 
 let accounts;
+
 let daiContract = new web3.eth.Contract(DAI_ABI, DAI_ADDRESS);
 let cDaiContract = new web3.eth.Contract(CDAI_ABI, CDAI_ADDRESS);
+
 let dappAddress;
 let dappContract;
+
+let supplyAddress;
+let supplyContract;
 
 before(async () => {
   // Get a list of all accounts
