@@ -49,7 +49,9 @@ let dappContract;
 let supplyAddress;
 let supplyContract;
 
-before(async () => {
+before(async function () {
+  this.timeout(10000); // All tests in this suite get 10 seconds before timeout
+
   // Get a list of all accounts
   accounts = await web3.eth.getAccounts();
 
@@ -61,27 +63,26 @@ before(async () => {
   });
 
   // Deploy Dapp contract
-  dappContract = await new web3.eth.Contract(JSON.parse(interface))
+  dappContract = await new web3.eth.Contract(JSON.parse(compiledDapp.interface))
     .deploy({
-      data: bytecode,
-      arguments: [DAI_ADDRESS, CDAI_ADDRESS],
+      data: compiledDapp.bytecode,
     })
     .send({ from: accounts[0], gas: '1000000' });
 
   dappAddress = dappContract.options.address;
 });
 
-describe('Web3 and DAI Configuration', () => {
-  it('Connected to the forked Main Network with same set of addresses', async () => {
+describe('Test Setup', function () {
+  it('Connected to a forked/copy of the Kovan Network with same set of addresses', async function () {
     assert.equal(accounts[0], '0xa0df350d2637096571F7A701CBc1C5fdE30dF76A');
   });
 
-  it("Interfaces with MKR's Dai contract on mainnet", async () => {
+  it('Interfacing with Dai contract on Kovan', async function () {
     const name = await daiContract.methods.name().call();
     assert.equal(name, 'Dai Stablecoin');
   });
 
-  it('Unlocked the account of a Dai holder (sent 10 Dai to our first wallet address)', async () => {
+  it('Unlocked the account of initial Dai holder (sent 10 Dai to our first wallet address)', async function () {
     await daiContract.methods
       .transfer(accounts[0], web3.utils.toHex(10e18))
       .send({ from: UNLOCKED_ADDRESS });
@@ -91,25 +92,109 @@ describe('Web3 and DAI Configuration', () => {
   });
 });
 
-describe('Dapp Contract', () => {
-  it('Has been deployed', () => {
+describe('Dapp Contract', function () {
+  it('Dapp (factory contract) deployed', function () {
     assert.ok(dappAddress);
   });
 
-  it('Receives Dai from user and can check amount', async () => {
-    await daiContract.methods
-      .transfer(dappAddress, web3.utils.toHex(10e18))
-      .send({ from: accounts[0] });
-
-    const daiBalance = await daiContract.methods.balanceOf(dappAddress).call();
-    const dappDaiBalance = await dappContract.methods
-      .getDappDaiBalance()
-      .call();
-    assert.equal(daiBalance, dappDaiBalance);
+  it('Throws error if no Supply contract is registered for given address', async function () {
+    try {
+      await dappContract.methods.getDeployedSupply(accounts[1]).call();
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
   });
 
-  it('Supply 10 Dai to Compound', async () => {
-    await dappContract.methods
+  it('Can create a Supply contract', async function () {
+    await dappContract.methods.createSupply(DAI_ADDRESS, CDAI_ADDRESS).send({
+      from: accounts[0],
+      gasLimit: web3.utils.toHex(5000000),
+      gasPrice: web3.utils.toHex(20000000000),
+    });
+
+    const supplyIdFromMapping = await dappContract.methods
+      .supplierToSupply(accounts[0])
+      .call();
+
+    const supplyAddrFromArray = await dappContract.methods
+      .deployedSupplies(supplyIdFromMapping - 1)
+      .call();
+
+    const supplyAddrFromFunction = await dappContract.methods
+      .getDeployedSupply(accounts[0])
+      .call();
+
+    assert.equal(supplyIdFromMapping, 1);
+    assert.equal(supplyAddrFromArray, supplyAddrFromFunction);
+  });
+
+  it('Cannot create more than one Supply contract', async function () {
+    try {
+      await dappContract.methods.createSupply(DAI_ADDRESS, CDAI_ADDRESS).send({
+        from: accounts[0],
+        gasLimit: web3.utils.toHex(5000000),
+        gasPrice: web3.utils.toHex(20000000000),
+      });
+
+      // Calls same create function twice
+      await dappContract.methods.createSupply(DAI_ADDRESS, CDAI_ADDRESS).send({
+        from: accounts[0],
+        gasLimit: web3.utils.toHex(5000000),
+        gasPrice: web3.utils.toHex(20000000000),
+      });
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
+  });
+});
+
+describe('Supply Contract', function () {
+  before(async function () {
+    supplyAddress = await dappContract.methods
+      .getDeployedSupply(accounts[0])
+      .call();
+
+    supplyContract = await new web3.eth.Contract(
+      JSON.parse(compiledSupply.interface),
+      supplyAddress
+    );
+  });
+
+  it('Instance of Supply contract deployed', function () {
+    assert.ok(supplyAddress);
+  });
+
+  it('Cannot supply Dai to Compound unless a sufficient amount of Dai is deposited', async function () {
+    try {
+      await supplyContract.methods
+        .supplyDaiToCompound(web3.utils.toHex(10e18))
+        .send({
+          from: accounts[0],
+          gasLimit: web3.utils.toHex(5000000),
+          gasPrice: web3.utils.toHex(20000000000),
+        });
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
+  });
+
+  it('User can deposit Dai to Supply contract', async function () {
+    await daiContract.methods
+      .transfer(supplyAddress, web3.utils.toHex(10e18))
+      .send({ from: accounts[0] });
+
+    const daiBalance = await daiContract.methods
+      .balanceOf(supplyAddress)
+      .call();
+    assert.equal(daiBalance, 10000000000000000000);
+  });
+
+  it('Receive correct amount of cDai for supplying Dai to Compound', async function () {
+    this.timeout(10000);
+    await supplyContract.methods
       .supplyDaiToCompound(web3.utils.toHex(10e18))
       .send({
         from: accounts[0],
@@ -117,16 +202,32 @@ describe('Dapp Contract', () => {
         gasPrice: web3.utils.toHex(20000000000),
       });
 
+    const currentExchangeRate = await cDaiContract.methods
+      .exchangeRateCurrent()
+      .call();
+
+    const expectedAmount =
+      web3.utils.toHex(10e18) / (currentExchangeRate / web3.utils.toHex(1e18));
+
     const cDaiBalance = await cDaiContract.methods
-      .balanceOf(dappAddress)
+      .balanceOf(supplyAddress)
       .call();
 
-    const dappCompDaiBalance = await dappContract.methods
-      .getDappCompDaiBalance()
-      .call();
-
-    assert.equal(cDaiBalance, dappCompDaiBalance);
+    assert.equal(Math.trunc(expectedAmount), Math.trunc(cDaiBalance));
   });
 
-  // Test out exchange rate
+  it('Only the address that was set at contract creation can supply tokens from this contract', async function () {
+    try {
+      await supplyContract.methods
+        .supplyDaiToCompound(web3.utils.toHex(10e18))
+        .send({
+          from: accounts[1],
+          gasLimit: web3.utils.toHex(5000000),
+          gasPrice: web3.utils.toHex(20000000000),
+        });
+      assert(false);
+    } catch (err) {
+      assert(err);
+    }
+  });
 });

@@ -2,14 +2,9 @@ pragma solidity ^0.4.26;
 
 // Dai interface
 contract DaiInterface {
-    function balanceOf(address) public view returns (uint256); // remove
+    function balanceOf(address) public view returns (uint256);
 
     function approve(address, uint256) external returns (bool);
-
-    function allowance(address _owner, address _spender)
-        public
-        view
-        returns (uint256); // remove
 }
 
 contract CompDaiInterface {
@@ -21,7 +16,7 @@ contract CompDaiInterface {
 // Factory Contract
 contract Dapp {
     address[] public deployedSupplies;
-    mapping(address => uint256) private supplierToSupply;
+    mapping(address => uint256) public supplierToSupply;
 
     // Kovan Dai Contract: 0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa
     // Kovan cDai Contract: 0xF0d0EB522cfa50B716B3b1604C4F0fA6f04376AD
@@ -88,12 +83,6 @@ contract Supply {
         compDaiContract = CompDaiInterface(_compDaiContractAddress);
     }
 
-    // remove
-    function getDappDaiBalance() public view returns (uint256) {
-        return daiContract.balanceOf(address(this));
-    }
-
-    // remove
     function getDappCompDaiBalance() public view returns (uint256) {
         return compDaiContract.balanceOf(address(this));
     }
