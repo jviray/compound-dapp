@@ -1,7 +1,7 @@
 import web3 from './web3';
 
 // cDai address on Kovan
-const address = '0xF0d0EB522cfa50B716B3b1604C4F0fA6f04376AD';
+export const address = '0xF0d0EB522cfa50B716B3b1604C4F0fA6f04376AD';
 
 const abi = [
   {

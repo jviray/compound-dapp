@@ -16,15 +16,11 @@ if (typeof window !== 'undefined' && typeof window.ethereum !== 'undefined') {
   web3 = new Web3(window.web3.currentProvider);
 } else {
   // When user does not have Metamask
-  // const provider = new Web3.providers.HttpProvider(
-  //   'https://kovan.infura.io/v3/213d3dde92d54590aedc49f08282827e'
-  // );
-
-  // web3 = new Web3(provider);
-
-  console.log(
-    'Browser not equipped to access Ethereum. Consider connecting w/ MetaMask!'
+  const provider = new Web3.providers.HttpProvider(
+    'https://kovan.infura.io/v3/213d3dde92d54590aedc49f08282827e'
   );
+
+  web3 = new Web3(provider);
 }
 
 export default web3;

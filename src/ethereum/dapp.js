@@ -1,5 +1,5 @@
 import web3 from './web3';
-import Dapp from '../../ethereum/build/Dapp.json';
+import Dapp from './Dapp.json';
 
 // Enter address of deployed Dapp:
 export const address = '0xa82E41eE076E2cb5bAE941dbB72725DF7072AB83';

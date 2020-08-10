@@ -1,0 +1,36 @@
+.navbar {
+  background: #fff;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 4rem;
+  padding: 1.25rem 0rem;
+  font-size: 1rem;
+}
+
+.appName {
+  h1 {
+    font-weight: 800;
+  }
+}
+
+.btn {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 121.25px;
+  height: 38.6;
+  background-color: #00d395;
+  border: 1.5px solid #00d395;
+  border-radius: 3px;
+  padding: 0.55rem 1rem;
+  font-size: 1rem;
+  font-weight: 600;
+  text-align: center;
+  letter-spacing: 0px;
+  color: #fff;
+  cursor: pointer;
+
+  &:hover {
+    background: transparent;
+    color: #00d395;
+  }
+}
