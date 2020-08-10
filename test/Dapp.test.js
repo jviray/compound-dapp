@@ -73,7 +73,7 @@ describe('Web3 and DAI Configuration', () => {
     assert.equal(name, 'Dai Stablecoin');
   });
 
-  it('Unlocked the account of a Dai holder (sent Dai to our first wallet address)', async () => {
+  it('Unlocked the account of a Dai holder (sent 10 Dai to our first wallet address)', async () => {
     await daiContract.methods
       .transfer(accounts[0], web3.utils.toHex(10e18))
       .send({ from: UNLOCKED_ADDRESS });
@@ -100,7 +100,7 @@ describe('Dapp Contract', () => {
     assert.equal(daiBalance, dappDaiBalance);
   });
 
-  it('Supply Dai to Compound for cDai', async () => {
+  it('Supply 10 Dai to Compound', async () => {
     await dappContract.methods
       .supplyDaiToCompound(web3.utils.toHex(10e18))
       .send({
@@ -119,4 +119,6 @@ describe('Dapp Contract', () => {
 
     assert.equal(cDaiBalance, dappCompDaiBalance);
   });
+
+  // Test out exchange rate
 });
