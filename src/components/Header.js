@@ -14,7 +14,7 @@ class Header extends Component {
           </div>
           <div>
             {this.props.isRegistered ? (
-              <p>Balance: {this.props.userDaiBalance} DAI</p>
+              <p>Metamask Balance: {this.props.userDaiBalance} DAI</p>
             ) : (
               <button className={btn} onClick={() => this.props.onStart()}>
                 {!this.props.isLoading ? (
